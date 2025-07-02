@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DearPDF | Simplify Your PDF Tasks</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+    tailwind.config = {
+        // IMPORTANT: Enable dark mode using the 'class' strategy
+        darkMode: 'class', 
+        theme: {
+            extend: {
+                colors: {
+                    brand: { 'light': '#e0f2fe', 'DEFAULT': '#38bdf8', 'dark': '#0284c7', 'extradark': '#0c4a6e' },
+                    success: { 'DEFAULT': '#10b981', 'dark': '#059669' }
+                },
+                keyframes: {
+                    fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                    scaleIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                },
+                animation: { 'fade-in': 'fadeIn 0.3s ease-out', 'scale-in': 'scaleIn 0.3s ease-out' }
+            }
+        }
+    }
+    </script>
+    
+    <!-- JS Libraries via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+        .drop-zone { border: 2px dashed; transition: all 0.3s ease; }
+        .drop-zone-over { border-color: #38bdf8; background-color: #f0f9ff; }
+        .dark .drop-zone-over { background-color: rgba(56, 189, 248, 0.1); }
+        .cropper-bg { background-image: none !important; }
+        .cropper-modal { background: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors duration-300">
+
+    <!-- =========== HEADER =========== -->
+    <header class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg sticky top-0 z-40 border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" onclick="window.location.reload()" class="text-2xl font-bold text-brand-dark dark:text-brand-light flex items-center">
+                <i data-lucide="file-heart" class="mr-2"></i> DearPDF
+            </a>
+            <nav id="desktop-nav" class="hidden md:flex items-center space-x-6">
+                <a href="#tools" class="text-gray-600 dark:text-gray-300 hover:text-brand-dark dark:hover:text-brand-light transition">Tools</a>
+            </nav>
+            <div class="flex items-center space-x-2">
+                 <a href="#tools" class="bg-brand-dark hover:bg-brand-extradark text-white font-medium py-2 px-4 rounded-lg transition shadow-sm hover:shadow-md hidden sm:block">Explore All Tools</a>
+                <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+                <button id="mobile-menu-btn" class="md:hidden text-gray-600 dark:text-gray-300 hover:text-brand-dark dark:hover:text-brand-light">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- =========== MOBILE MENU (SIDEBAR) =========== -->
+    <div id="mobile-menu" class="fixed inset-0 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden">
+        <div class="fixed inset-0 bg-black/30" id="mobile-menu-overlay"></div>
+        <div class="relative w-64 h-full bg-white dark:bg-gray-800 shadow-lg p-6">
+            <button id="mobile-menu-close-btn" class="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            <nav class="flex flex-col space-y-4 mt-8">
+                <a href="#tools" class="text-gray-700 dark:text-gray-300 hover:text-brand-dark dark:hover:text-brand-light transition text-lg">Tools</a>
+            </nav>
+        </div>
+    </div>
+    
+    <main>
+        <!-- =========== HERO SECTION =========== -->
+        <section id="hero" class="py-20 md:py-32 bg-white dark:bg-gray-800 text-center">
+            <div class="container mx-auto px-6">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white">Simplify Your PDF Tasks with <span class="text-brand-dark dark:text-brand-light">DearPDF</span></h1>
+                <p class="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">Fast, secure, and free tools. All processing happens in your browser. No uploads required.</p>
+                <div class="mt-8"><a href="#tools" class="bg-brand hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105 shadow-lg">Get Started</a></div>
+            </div>
+        </section>
+
+        <!-- =========== TOOLS GRID SECTION =========== -->
+        <section id="tools" class="py-20"><div class="container mx-auto px-6"><div class="text-center mb-12"><h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Your Everyday PDF Toolkit</h2></div><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div></div></section>
+    </main>
+
+    <footer class="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"><div class="container mx-auto px-6 py-8"><p class="text-center text-gray-500 dark:text-gray-400">© 2025 DearPDF. All Rights Reserved.</p></div></footer>
+
+    <!-- =========== MODALS & UI CONTAINERS =========== -->
+    <div id="tool-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden animate-fade-in"><div id="tool-modal-bg" class="absolute inset-0"></div><div id="tool-container" class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform animate-scale-in"></div></div>
+    <div id="cropper-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[60] hidden"><div class="bg-white rounded-lg shadow-xl w-full max-w-4xl p-4"><div class="max-h-[70vh]"><img id="cropper-image" src=""></div><div class="flex justify-end space-x-2 mt-4"><button id="cropper-cancel" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">Cancel</button><button id="cropper-save" class="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark">Save Crop</button></div></div></div>
+
+
+    <!-- =========== INLINE JAVASCRIPT =========== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+        const { saveAs } = FileSaver;
+        
+        const toolModal = document.getElementById('tool-modal'), toolContainer = document.getElementById('tool-container'), toolsGrid = document.querySelector('#tools .grid'), toolModalBg = document.getElementById('tool-modal-bg'), mobileMenuBtn = document.getElementById('mobile-menu-btn'), mobileMenu = document.getElementById('mobile-menu'), mobileMenuCloseBtn = document.getElementById('mobile-menu-close-btn'), mobileMenuOverlay = document.getElementById('mobile-menu-overlay'), cropperModal = document.getElementById('cropper-modal'), cropperImage = document.getElementById('cropper-image'), cropperSaveBtn = document.getElementById('cropper-save'), cropperCancelBtn = document.getElementById('cropper-cancel'), themeToggleButton = document.getElementById('theme-toggle');
+
+        const tools = [ /* tool definitions */ ];
+        
+        let selectedFiles = [], imageEditorState = [], cropperInstance = null, currentCroppingIndex = -1;
+
+        // --- THEME TOGGLE LOGIC ---
+        const initTheme = () => {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        };
+
+        const toggleTheme = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+        };
+
+        themeToggleButton.addEventListener('click', toggleTheme);
+        initTheme(); // Set theme on initial load
+
+        // --- RENDER TOOL CARDS WITH NEW STYLING ---
+        function renderToolCards() {
+            toolsGrid.innerHTML = tools.map(tool => `
+            <div class="group cursor-pointer" onclick="openTool('${tool.id}')">
+                <div class="bg-blue-600 p-6 rounded-xl shadow-lg hover:shadow-xl hover:bg-blue-700 transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="bg-white/20 p-4 rounded-full w-max mx-auto mb-4">
+                        <i data-lucide="${tool.icon}" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white">${tool.name}</h3>
+                    <p class="text-blue-100 text-sm mt-1 opacity-90">${tool.desc}</p>
+                </div>
+            </div>`).join('');
+            lucide.createIcons();
+        }
+
+        mobileMenuBtn.onclick = () => mobileMenu.classList.remove('-translate-x-full');
+        [mobileMenuCloseBtn, mobileMenuOverlay, ...mobileMenu.querySelectorAll('a')].forEach(el => el.onclick = () => mobileMenu.classList.add('-translate-x-full'));
+
+        window.openTool = (toolId) => {
+            const tool = tools.find(t => t.id === toolId);
+            toolContainer.innerHTML = `<div class="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700"><h2 class="text-2xl font-bold flex items-center text-gray-900 dark:text-white"><i data-lucide="${tool.icon}" class="w-7 h-7 text-brand-dark dark:text-brand-light mr-3"></i>${tool.name}</h2><button onclick="closeTool()" class="text-gray-400 hover:text-gray-700 dark:hover:text-white"><i data-lucide="x" class="w-8 h-8"></i></button></div><div class="p-6 flex-grow overflow-y-auto"><div id="tool-content"></div><div id="file-list-container" class="mt-4"></div><div id="status" class="mt-4 text-center"></div></div><div id="footer-actions" class="p-5 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700"></div>`;
+            document.getElementById('tool-content').innerHTML = getToolSpecificUI(toolId);
+            resetFooter(toolId);
+            lucide.createIcons();
+            toolModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            setupDragAndDrop(toolId);
+        };
+        
+        window.closeTool = () => { /* no changes */ };
+        toolModalBg.onclick = closeTool;
+        function resetFooter(toolId) { /* no changes */ }
+        
+        function getToolSpecificUI(toolId) {
+            let optionsHTML = '';
+            const allowsMultiple = toolId === 'merge-pdf' || toolId === 'jpg-to-pdf';
+            const multipleAttribute = allowsMultiple ? 'multiple' : '';
+            const acceptAttribute = getAcceptString(toolId);
+
+            if (toolId === 'protect-pdf' || toolId === 'unlock-pdf') optionsHTML = `<input type="password" id="password-input" placeholder="Enter password" class="mt-4 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-brand">`;
+            if (toolId === 'text-to-pdf') return `<textarea id="text-input" class="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-brand" placeholder="Type or paste your text here..."></textarea>`;
+            if (toolId === 'jpg-to-pdf') optionsHTML = `<input type="text" id="filename-input" placeholder="Enter PDF filename (e.g., my-scans)" class="mt-4 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-brand">`;
+            if (toolId === 'compress-pdf') optionsHTML = `<div class="mt-4"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Compression:</label><select id="quality-select" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand"><option value="0.5">High (Smallest Size)</option><option value="0.75" selected>Medium</option><option value="0.92">Low (Best Quality)</option></select></div>`;
+            
+            return `<div id="drop-zone" class="drop-zone border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg p-10 text-center cursor-pointer">
+                        <i data-lucide="upload-cloud" class="w-16 h-16 mx-auto"></i>
+                        <p class="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-200">Drag & Drop file(s) here</p>
+                        <p>or</p>
+                        <button onclick="document.getElementById('file-input').click()" class="mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-lg">Choose Files</button>
+                        <input type="file" id="file-input" class="hidden" accept="${acceptAttribute}" ${multipleAttribute}>
+                    </div>
+                    ${optionsHTML}`;
+        }
+        
+        function updateImagePreviews() {
+            const container = document.getElementById('file-list-container');
+            const imagePreviewsHTML = imageEditorState.map((imgState, index) => `
+                <div class="relative border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-700/50 shadow-sm animate-scale-in">
+                    <img src="${imgState.url}" class="w-full h-32 object-contain" style="transform: rotate(${imgState.rotation}deg);">
+                    <div class="text-xs text-center truncate mt-2 text-gray-600 dark:text-gray-300">${imgState.file.name}</div>
+                    <div class="flex justify-center space-x-1 mt-2">
+                        <button title="Rotate Left" onclick="rotateImage(${index}, -90)" class="p-1.5 bg-gray-200 dark:bg-gray-600 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                        <button title="Rotate Right" onclick="rotateImage(${index}, 90)" class="p-1.5 bg-gray-200 dark:bg-gray-600 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200"><i data-lucide="rotate-cw" class="w-4 h-4"></i></button>
+                        <button title="Crop" onclick="openCropper(${index})" class="p-1.5 bg-gray-200 dark:bg-gray-600 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200"><i data-lucide="crop" class="w-4 h-4"></i></button>
+                    </div>
+                    <button onclick="removeImage(${index})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs" title="Remove Image">×</button>
+                </div>`).join('');
+
+            const addMoreCardHTML = `
+                <div onclick="document.getElementById('file-input').click()" class="cursor-pointer border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center p-4 h-full min-h-[160px] hover:border-brand dark:hover:text-brand text-gray-400 dark:text-gray-500 hover:text-brand dark:hover:text-brand-light transition-colors">
+                    <i data-lucide="plus" class="w-10 h-10"></i>
+                    <span class="mt-2 text-sm font-medium">Add More</span>
+                </div>
+            `;
+            
+            container.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">${imagePreviewsHTML}${addMoreCardHTML}</div>`;
+            lucide.createIcons();
+            if(imageEditorState.length > 0) document.getElementById('drop-zone')?.classList.add('hidden');
+        }
+
+        // --- All other JS functions remain the same. Copying them here for completeness. ---
+        closeTool = () => { toolModal.classList.add('hidden'); document.body.style.overflow = 'auto'; if (imageEditorState.length > 0) imageEditorState.forEach(s => URL.revokeObjectURL(s.url)); selectedFiles = []; imageEditorState = []; toolContainer.innerHTML = ''; };
+        resetFooter = (toolId) => { const tool = tools.find(t => t.id === toolId); const footer = document.getElementById('footer-actions'); footer.innerHTML = `<button id="process-btn" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-lg transition shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"><i data-lucide="${tool.icon}" class="w-5 h-5 mr-2"></i><span>${tool.name}</span></button>`; lucide.createIcons(); document.getElementById('process-btn').onclick = () => processFiles(toolId); };
+        setupDragAndDrop = (toolId) => { const dropZone = document.getElementById('drop-zone'); if (!dropZone) return; const fileInput = document.getElementById('file-input'); ['dragover', 'dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => e.preventDefault())); dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone-over')); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-over')); dropZone.addEventListener('drop', e => { dropZone.classList.remove('drop-zone-over'); handleFiles(e.dataTransfer.files, toolId); }); fileInput.addEventListener('change', e => handleFiles(e.target.files, toolId)); };
+        handleFiles = (files, toolId) => { const newFiles = Array.from(files); const allowsMultiple = toolId === 'merge-pdf' || toolId === 'jpg-to-pdf'; if (toolId === 'jpg-to-pdf') { const imageFiles = newFiles.filter(f => f.type === 'image/jpeg' || f.type === 'image/png'); imageFiles.forEach(file => { imageEditorState.push({ file, url: URL.createObjectURL(file), rotation: 0, cropData: null }); }); updateImagePreviews(); } else if (allowsMultiple) { const pdfFiles = newFiles.filter(f => f.type === 'application/pdf'); selectedFiles.push(...pdfFiles); updateFileList(); } else { const validFile = newFiles.find(f => f.type === 'application/pdf'); if (validFile) { selectedFiles = [validFile]; if (newFiles.length > 1) showStatus('This tool only accepts one file. Using the first valid one.', 'info'); updateFileList(); } } };
+        updateFileList = () => { const container = document.getElementById('file-list-container'); container.innerHTML = selectedFiles.map((file, index) => `<div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg flex justify-between items-center animate-fade-in"><span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">${file.name}</span><button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">×</button></div>`).join(''); if(selectedFiles.length > 0) document.getElementById('drop-zone')?.classList.add('hidden'); };
+        window.removeFile = (index) => { selectedFiles.splice(index, 1); updateFileList(); if(selectedFiles.length === 0) document.getElementById('drop-zone')?.classList.remove('hidden'); };
+        window.rotateImage = (index, angle) => { imageEditorState[index].rotation = (imageEditorState[index].rotation + angle + 360) % 360; updateImagePreviews(); };
+        window.removeImage = (index) => { URL.revokeObjectURL(imageEditorState[index].url); imageEditorState.splice(index, 1); updateImagePreviews(); };
+        window.openCropper = (index) => { currentCroppingIndex = index; cropperImage.src = imageEditorState[index].url; cropperModal.classList.remove('hidden'); cropperInstance = new Cropper(cropperImage, { aspectRatio: NaN, viewMode: 1, background: false }); };
+        cropperSaveBtn.onclick = () => { if (cropperInstance) { imageEditorState[currentCroppingIndex].cropData = cropperInstance.getData(); cropperInstance.destroy(); cropperInstance = null; cropperModal.classList.add('hidden'); } };
+        cropperCancelBtn.onclick = () => { if (cropperInstance) cropperInstance.destroy(); cropperModal.classList.add('hidden'); };
+        setProcessingState = (isProcessing, toolName) => { const btn = document.getElementById('process-btn'); if (!btn) return; btn.disabled = isProcessing; btn.innerHTML = isProcessing ? `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div><span class="ml-3">Processing...</span>` : `<i data-lucide="${tools.find(t=>t.name===toolName).icon}" class="w-5 h-5 mr-2"></i><span>${toolName}</span>`; if(!isProcessing) lucide.createIcons(); };
+        showDownloadButton = (blob, filename) => { const footer = document.getElementById('footer-actions'); footer.innerHTML = `<button id="download-btn" class="w-full bg-success-DEFAULT hover:bg-success-dark text-white font-bold py-3 px-6 rounded-lg transition shadow-sm flex items-center justify-center"><i data-lucide="download" class="w-5 h-5 mr-2"></i><span>Download ${filename}</span></button>`; lucide.createIcons(); document.getElementById('download-btn').onclick = () => saveAs(blob, filename); };
+        processFiles = async (toolId) => { const tool = tools.find(t => t.id === toolId); const needsFiles = toolId !== 'text-to-pdf'; const fileCount = toolId === 'jpg-to-pdf' ? imageEditorState.length : selectedFiles.length; if (needsFiles && fileCount === 0) { showStatus('Please select one or more files.', 'error'); return; } setProcessingState(true, tool.name); showStatus('Preparing your file...', 'info'); try { let result; switch (toolId) { case 'merge-pdf': result = await handleMergePDF(); break; case 'split-pdf': return await handleSplitPDF(); case 'compress-pdf': result = await handleCompressPDF(); break; case 'text-to-pdf': result = await handleTextToPDF(); break; case 'pdf-to-text': result = await handlePDFToText(); break; case 'pdf-to-jpg': return await handlePDFToJPG(); case 'jpg-to-pdf': result = await handleJPGToPDF(); break; case 'protect-pdf': result = await handleProtectPDF(); break; case 'unlock-pdf': result = await handleUnlockPDF(); break; case 'add-page-numbers': result = await handleAddPageNumbers(); break; } if (result && result.blob && result.filename) { showDownloadButton(result.blob, result.filename); showStatus('Your file is ready!', 'success'); } } catch (error) { console.error('Processing error:', error); showStatus(`An error occurred: ${error.message}`, 'error'); resetFooter(toolId); } finally { setProcessingState(false, tool.name); } };
+        handleJPGToPDF = async () => { const pdfDoc = await PDFDocument.create(); const filenameInput = document.getElementById('filename-input').value.trim(); for (const [index, imgState] of imageEditorState.entries()) { showStatus(`Processing image ${index + 1}/${imageEditorState.length}...`, 'info'); const image = await new Promise(res => { const i = new Image(); i.onload = () => res(i); i.src = imgState.url; }); const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const { cropData: crop, rotation: rot } = imgState; const sx = crop?.x ?? 0, sy = crop?.y ?? 0, sw = crop?.width ?? image.width, sh = crop?.height ?? image.height; if (rot === 90 || rot === 270) { canvas.width = sh; canvas.height = sw; } else { canvas.width = sw; canvas.height = sh; } ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(rot * Math.PI / 180); ctx.drawImage(image, sx, sy, sw, sh, -sw / 2, -sh / 2, sw, sh); const jpgBytes = await fetch(canvas.toDataURL('image/jpeg', 0.9)).then(res => res.arrayBuffer()); const jpgImage = await pdfDoc.embedJpg(jpgBytes); const page = pdfDoc.addPage([jpgImage.width, jpgImage.height]); page.drawImage(jpgImage, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() }); } const pdfBytes = await pdfDoc.save(); const blob = new Blob([pdfBytes], { type: 'application/pdf' }); return { blob, filename: `${filenameInput || 'dearpdf-from-images'}.pdf` }; };
+        handleMergePDF = async () => { const mergedPdf = await PDFDocument.create(); for (const file of selectedFiles) { const pdfDoc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true }); const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices()); copiedPages.forEach(page => mergedPdf.addPage(page)); } const blob = new Blob([await mergedPdf.save()], { type: 'application/pdf' }); return { blob, filename: 'dearpdf-merged.pdf' }; };
+        handleSplitPDF = async () => { showStatus('Splitting... Downloads will start automatically.', 'info'); const file = selectedFiles[0]; const pdfDoc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true }); if (pdfDoc.getPageCount() < 2) throw new Error("PDF must have at least 2 pages to split."); for (let i = 0; i < pdfDoc.getPageCount(); i++) { const newDoc = await PDFDocument.create(); const [copiedPage] = await newDoc.copyPages(pdfDoc, [i]); newDoc.addPage(copiedPage); saveAs(new Blob([await newDoc.save()], { type: 'application/pdf' }), `${file.name.replace(/\.pdf$/i, '')}-p${i + 1}.pdf`); } showStatus('Split complete!', 'success'); document.getElementById('footer-actions').innerHTML = ''; };
+        handleCompressPDF = async () => { const quality = parseFloat(document.getElementById('quality-select').value); const pdf = await pdfjsLib.getDocument(await selectedFiles[0].arrayBuffer()).promise; const newPdfDoc = await PDFDocument.create(); for(let i = 1; i <= pdf.numPages; i++) { showStatus(`Compressing page ${i} of ${pdf.numPages}...`, 'info'); const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 1.5 }); const canvas = document.createElement('canvas'); canvas.height = viewport.height; canvas.width = viewport.width; await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise; const jpgBytes = await fetch(canvas.toDataURL('image/jpeg', quality)).then(res => res.arrayBuffer()); const jpgImage = await newPdfDoc.embedJpg(jpgBytes); const newPage = newPdfDoc.addPage([jpgImage.width, jpgImage.height]); newPage.drawImage(jpgImage, { x: 0, y: 0, width: newPage.getWidth(), height: newPage.getHeight() }); } const blob = new Blob([await newPdfDoc.save()], { type: 'application/pdf' }); return { blob, filename: 'dearpdf-compressed.pdf' }; };
+        handleTextToPDF = async () => { const text = document.getElementById('text-input').value; if (!text) throw new Error('Text input is empty.'); const pdfDoc = await PDFDocument.create(); const page = pdfDoc.addPage(); page.drawText(text, { x: 50, y: page.getHeight() - 50, font: await pdfDoc.embedFont(StandardFonts.Helvetica), size: 11, lineHeight: 14, maxWidth: page.getWidth() - 100 }); const blob = new Blob([await pdfDoc.save()], { type: 'application/pdf' }); return { blob, filename: 'dearpdf-text.pdf' }; };
+        handlePDFToText = async () => { const pdf = await pdfjsLib.getDocument(await selectedFiles[0].arrayBuffer()).promise; let fullText = ''; for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += textContent.items.map(item => item.str).join(' ') + '\n\n'; } const blob = new Blob([fullText], { type: "text/plain;charset=utf-8" }); return { blob, filename: 'dearpdf-extracted.txt' }; };
+        handlePDFToJPG = async () => { showStatus('Converting... Downloads will start automatically.', 'info'); const file = selectedFiles[0]; const pdf = await pdfjsLib.getDocument(await file.arrayBuffer()).promise; for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 2.0 }); const canvas = document.createElement('canvas'); canvas.height = viewport.height; canvas.width = viewport.width; await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise; canvas.toBlob(blob => saveAs(blob, `${file.name.replace(/\.pdf$/i, '')}-p${i}.jpg`), 'image/jpeg', 0.95); } showStatus('Conversion complete!', 'success'); document.getElementById('footer-actions').innerHTML = ''; };
+        handleProtectPDF = async () => { const password = document.getElementById('password-input').value; if (!password) throw new Error('Password is required.'); const pdfDoc = await PDFDocument.load(await selectedFiles[0].arrayBuffer()); const blob = new Blob([await pdfDoc.save({ userPassword: password, ownerPassword: password })], { type: 'application/pdf' }); return { blob, filename: `dearpdf-protected.pdf` }; };
+        handleUnlockPDF = async () => { const password = document.getElementById('password-input').value; try { const pdfDoc = await PDFDocument.load(await selectedFiles[0].arrayBuffer(), { ownerPassword: password }); const blob = new Blob([await pdfDoc.save()], { type: 'application/pdf' }); return { blob, filename: `dearpdf-unlocked.pdf` }; } catch (e) { throw new Error('Incorrect password or file is not encrypted.'); } };
+        handleAddPageNumbers = async () => { const pdfDoc = await PDFDocument.load(await selectedFiles[0].arrayBuffer()); const pages = pdfDoc.getPages(); for (let i = 0; i < pages.length; i++) { const page = pages[i]; pages[i].drawText(`${i + 1} / ${pages.length}`, { x: page.getWidth() / 2 - 20, y: 20, size: 12, font: await pdfDoc.embedFont(StandardFonts.Helvetica), color: rgb(0.5, 0.5, 0.5) }); } const blob = new Blob([await pdfDoc.save()], { type: 'application/pdf' }); return { blob, filename: 'dearpdf-numbered.pdf' }; };
+        showStatus = (message, type = 'info') => { const statusEl = document.getElementById('status'); const colors = { info: 'text-blue-600', success: 'text-green-600', error: 'text-red-600' }; if(statusEl) statusEl.innerHTML = `<p class="dark:text-white/80 ${colors[type]}">${message}</p>`; };
+        getAcceptString = (toolId) => { if (toolId === 'jpg-to-pdf') return 'image/jpeg,image/png'; if (toolId.includes('pdf')) return 'application/pdf'; return ''; };
+        
+        tools[0] = { id: 'merge-pdf', name: 'Merge PDF', desc: 'Combine multiple PDFs into one.', icon: 'combine' };
+        tools[1] = { id: 'split-pdf', name: 'Split PDF', desc: 'Extract pages from a PDF.', icon: 'scissors' };
+        tools[2] = { id: 'compress-pdf', name: 'Compress PDF', desc: 'Reduce the file size of your PDF.', icon: 'minimize-2' };
+        tools[3] = { id: 'text-to-pdf', name: 'Text to PDF', desc: 'Convert plain text into a PDF.', icon: 'file-text' };
+        tools[4] = { id: 'pdf-to-text', name: 'PDF to Text', desc: 'Extract text from a PDF file.', icon: 'file-signature' };
+        tools[5] = { id: 'pdf-to-jpg', name: 'PDF to JPG', desc: 'Convert PDF pages to JPG images.', icon: 'file-image' };
+        tools[6] = { id: 'jpg-to-pdf', name: 'JPG to PDF', desc: 'Create a PDF from images.', icon: 'image' };
+        tools[7] = { id: 'protect-pdf', name: 'Protect PDF', desc: 'Add a password to your PDF.', icon: 'lock' };
+        tools[8] = { id: 'unlock-pdf', name: 'Unlock PDF', desc: 'Remove password from a PDF.', icon: 'unlock' };
+        tools[9] = { id: 'add-page-numbers', name: 'Page Numbers', desc: 'Add page numbers to a PDF.', icon: 'hash' };
+
+        renderToolCards();
+    });
+    </script>
+</body>
+</html>
