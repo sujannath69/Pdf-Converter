@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DearPDF | Simplify Your PDF Tasks</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config (for branding colors) -->
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    brand: {
+                        'light': '#e0f2fe', // sky-100
+                        'DEFAULT': '#38bdf8', // sky-400
+                        'dark': '#0284c7', // sky-600
+                        'extradark': '#0c4a6e' // sky-900
+                    }
+                }
+            }
+        }
+    }
+    </script>
+    
+    <!-- JS Libraries via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- pdf.js for rendering and text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    </script>
+
+    <style>
+        /* Basic styling for a smooth experience */
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+        
+        /* Custom styles for drag-and-drop area */
+        .drop-zone {
+            border: 2px dashed #d1d5db; /* gray-300 */
+            transition: all 0.3s ease;
+        }
+        .drop-zone-over {
+            border-color: #38bdf8; /* brand-DEFAULT */
+            background-color: #f0f9ff; /* sky-50 */
+        }
+        .tool-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- =========== HEADER =========== -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 border-b border-gray-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-brand-dark flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+                DearPDF
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#tools" class="text-gray-600 hover:text-brand-dark transition">Tools</a>
+                <a href="#" class="text-gray-600 hover:text-brand-dark transition">Pricing</a>
+                <a href="#" class="text-gray-600 hover:text-brand-dark transition">About</a>
+                <a href="#" class="text-gray-600 hover:text-brand-dark transition">Contact</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <a href="#" class="hidden sm:block text-gray-600 hover:text-brand-dark transition">Sign In</a>
+                <a href="#tools" class="bg-brand-dark hover:bg-brand-extradark text-white font-medium py-2 px-4 rounded-lg transition shadow-sm hover:shadow-md">
+                    Explore All Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- =========== HERO SECTION =========== -->
+        <section id="hero" class="py-20 md:py-32 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+                    Simplify Your PDF Tasks with <span class="text-brand-dark">DearPDF</span>
+                </h1>
+                <p class="mt-4 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                    Fast, secure, and smart tools for students and professionals. All processing happens in your browser. No uploads required.
+                </p>
+                <div class="mt-8 flex justify-center items-center space-x-4">
+                    <a href="#tools" class="bg-brand hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105 shadow-lg">
+                        Start Now
+                    </a>
+                    <a href="#features" class="border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-100 text-gray-700 font-bold py-3 px-8 rounded-full transition">
+                        See Features
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== TOOLS GRID SECTION =========== -->
+        <section id="tools" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Your Everyday PDF Toolkit</h2>
+                    <p class="mt-3 text-gray-600">Click on any tool to get started instantly.</p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <!-- Tool Cards will be inserted here by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- =========== FEATURES SECTION =========== -->
+        <section id="features" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Why Choose DearPDF?</h2>
+                    <p class="mt-3 text-gray-600">We prioritize your privacy, speed, and convenience.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                    <div class="p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-brand-light text-brand-dark mx-auto mb-4">
+                            <i data-lucide="shield-check" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Private & Secure</h3>
+                        <p class="text-gray-600">Your files are never uploaded. All processing happens locally in your browser, ensuring 100% privacy.</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-brand-light text-brand-dark mx-auto mb-4">
+                            <i data-lucide="zap" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Blazing Fast</h3>
+                        <p class="text-gray-600">Leveraging your computer's power means no waiting for uploads or downloads from a server. It's instant.</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-brand-light text-brand-dark mx-auto mb-4">
+                            <i data-lucide="smartphone" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Mobile Friendly</h3>
+                        <p class="text-gray-600">Our tools are designed to work seamlessly on your phone or tablet, so you can manage PDFs on the go.</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-brand-light text-brand-dark mx-auto mb-4">
+                            <i data-lucide="wifi-off" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Works Offline</h3>
+                        <p class="text-gray-600">Once the site is loaded, you can disconnect from the internet. All tools will continue to function perfectly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- =========== MOBILE APP PROMO SECTION =========== -->
+        <section class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="bg-brand-dark rounded-2xl p-10 md:p-16 flex flex-col md:flex-row items-center justify-between overflow-hidden">
+                    <div class="md:w-1/2 text-white text-center md:text-left mb-10 md:mb-0">
+                        <h2 class="text-3xl md:text-4xl font-bold mb-4">Take DearPDF with you</h2>
+                        <p class="mb-8 opacity-90">Get the full power of our PDF tools on your mobile device. Perfect for when you're away from your desk.</p>
+                        <div class="flex justify-center md:justify-start space-x-4">
+                            <a href="#" class="bg-white text-brand-dark font-semibold py-3 px-6 rounded-lg flex items-center space-x-2 hover:bg-gray-200 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                <span>App Store</span>
+                            </a>
+                            <a href="#" class="border-2 border-white/50 text-white font-semibold py-3 px-6 rounded-lg flex items-center space-x-2 hover:bg-white/10 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Play Store</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2 relative h-64 md:h-auto">
+                        <!-- Phone Mockups -->
+                        <div class="absolute -bottom-16 right-0 md:right-10 w-48 md:w-64">
+                             <div class="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[300px] w-[150px] shadow-xl">
+                                <div class="w-[70px] h-[10px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute"></div>
+                                <div class="h-[32px] w-[3px] bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
+                                <div class="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
+                                <div class="h-[46px] w-[3px] bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
+                                <div class="rounded-[2rem] overflow-hidden w-[122px] h-[272px] bg-white dark:bg-gray-800">
+                                     <div class="bg-brand-light h-full w-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =========== FOOTER =========== -->
+    <footer class="bg-gray-100 border-t">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+                <p class="text-gray-500 mb-4 md:mb-0">© 2025 DearPDF. All Rights Reserved.</p>
+                <div class="flex space-x-6 text-gray-600">
+                    <a href="#" class="hover:text-brand-dark transition">Terms of Service</a>
+                    <a href="#" class="hover:text-brand-dark transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-brand-dark transition">FAQ</a>
+                    <a href="#" class="hover:text-brand-dark transition">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- =========== TOOL MODAL =========== -->
+    <div id="tool-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden animate-fade-in">
+        <div id="tool-container" class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col transform animate-scale-in">
+            <!-- Tool content will be injected here -->
+        </div>
+    </div>
+
+
+    <!-- =========== INLINE JAVASCRIPT =========== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- LIBRARY INITIALIZATION ---
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+        const { saveAs } = FileSaver;
+        
+        // --- DOM ELEMENTS ---
+        const toolModal = document.getElementById('tool-modal');
+        const toolContainer = document.getElementById('tool-container');
+        const toolsGrid = document.querySelector('#tools .grid');
+
+        // --- DATA ---
+        const tools = [
+            { id: 'merge-pdf', name: 'Merge PDF', desc: 'Combine multiple PDFs into one.', icon: 'combine' },
+            { id: 'split-pdf', name: 'Split PDF', desc: 'Extract pages from a PDF.', icon: 'scissors' },
+            { id: 'compress-pdf', name: 'Compress PDF', desc: 'Reduce the file size of your PDF.', icon: 'minimize-2' },
+            { id: 'text-to-pdf', name: 'Text to PDF', desc: 'Convert plain text into a PDF.', icon: 'file-text' },
+            { id: 'pdf-to-text', name: 'PDF to Text', desc: 'Extract text from a PDF file.', icon: 'file-signature' },
+            { id: 'pdf-to-jpg', name: 'PDF to JPG', desc: 'Convert PDF pages to JPG images.', icon: 'file-image' },
+            { id: 'jpg-to-pdf', name: 'JPG to PDF', desc: 'Create a PDF from JPG images.', icon: 'image' },
+            { id: 'protect-pdf', name: 'Protect PDF', desc: 'Add a password to your PDF.', icon: 'lock' },
+            { id: 'unlock-pdf', name: 'Unlock PDF', desc: 'Remove password from a PDF.', icon: 'unlock' },
+            { id: 'add-page-numbers', name: 'Page Numbers', desc: 'Add page numbers to a PDF.', icon: 'hash' },
+        ];
+        
+        let selectedFiles = [];
+
+        // --- UI INITIALIZATION ---
+        
+        // Render tool cards
+        function renderToolCards() {
+            toolsGrid.innerHTML = tools.map(tool => `
+                <div class="tool-card bg-white p-6 rounded-xl shadow-sm hover:shadow-brand-light cursor-pointer flex flex-col items-center text-center" onclick="openTool('${tool.id}')">
+                    <div class="bg-brand-light text-brand-dark p-4 rounded-full mb-4">
+                        <i data-lucide="${tool.icon}" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800">${tool.name}</h3>
+                    <p class="text-gray-500 text-sm mt-1">${tool.desc}</p>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- MODAL & TOOL UI ---
+        
+        window.openTool = (toolId) => {
+            const tool = tools.find(t => t.id === toolId);
+            if (!tool) return;
+
+            // Base UI structure for all tools
+            let toolHTML = `
+                <div class="flex justify-between items-center p-5 border-b border-gray-200">
+                    <div class="flex items-center">
+                        <i data-lucide="${tool.icon}" class="w-7 h-7 text-brand-dark mr-3"></i>
+                        <h2 class="text-2xl font-bold text-gray-800">${tool.name}</h2>
+                    </div>
+                    <button onclick="closeTool()" class="text-gray-400 hover:text-gray-700 transition">
+                        <i data-lucide="x" class="w-8 h-8"></i>
+                    </button>
+                </div>
+                <div class="p-6 flex-grow overflow-y-auto">
+                    ${getToolSpecificUI(toolId)}
+                    <div id="file-list" class="mt-4 space-y-2"></div>
+                    <div id="status" class="mt-4 text-center"></div>
+                </div>
+                <div class="p-5 bg-gray-50 border-t border-gray-200">
+                    <button id="process-btn" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-lg transition shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        ${tool.name}
+                    </button>
+                </div>
+            `;
+            
+            toolContainer.innerHTML = toolHTML;
+            lucide.createIcons();
+            toolModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+
+            setupDragAndDrop(toolId);
+            document.getElementById('process-btn').onclick = () => processFiles(toolId);
+            selectedFiles = []; // Reset files
+        };
+
+        function getToolSpecificUI(toolId) {
+            let optionsHTML = '';
+            // Add specific options for certain tools
+            if (toolId === 'protect-pdf') {
+                optionsHTML = `<input type="password" id="password-input" placeholder="Enter password to protect" class="mt-4 w-full p-2 border rounded">`;
+            }
+            if (toolId === 'unlock-pdf') {
+                optionsHTML = `<input type="password" id="password-input" placeholder="Enter password to unlock" class="mt-4 w-full p-2 border rounded">`;
+            }
+            if (toolId === 'text-to-pdf') {
+                return `<textarea id="text-input" class="w-full h-48 p-3 border rounded-lg focus:ring-2 focus:ring-brand" placeholder="Type or paste your text here..."></textarea>`;
+            }
+             if (toolId === 'compress-pdf') {
+                optionsHTML = `
+                    <div class="mt-4 space-y-2">
+                        <label for="quality-select" class="block text-sm font-medium text-gray-700">Compression Level:</label>
+                        <select id="quality-select" class="w-full p-2 border rounded">
+                            <option value="0.5">High (Smallest Size)</option>
+                            <option value="0.75" selected>Recommended</option>
+                            <option value="0.92">Low (Best Quality)</option>
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Default file drop zone
+            return `
+                <div id="drop-zone" class="drop-zone rounded-lg p-10 text-center cursor-pointer">
+                    <i data-lucide="upload-cloud" class="w-16 h-16 text-gray-400 mx-auto"></i>
+                    <p class="mt-4 text-lg font-semibold text-gray-700">Drag & Drop file(s) here</p>
+                    <p class="text-gray-500">or</p>
+                    <button onclick="document.getElementById('file-input').click()" class="mt-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-lg">
+                        Choose Files
+                    </button>
+                    <input type="file" id="file-input" class="hidden" ${getFileInputAccept(toolId)} ${toolId === 'merge-pdf' || toolId === 'jpg-to-pdf' ? 'multiple' : ''}>
+                </div>
+                ${optionsHTML}
+            `;
+        }
+
+        function getFileInputAccept(toolId) {
+            if (toolId.includes('jpg')) return 'accept="image/jpeg"';
+            if (toolId.includes('pdf')) return 'accept="application/pdf"';
+            return '';
+        }
+
+        window.closeTool = () => {
+            toolModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+        
+        // --- FILE HANDLING & DRAG-DROP ---
+
+        function setupDragAndDrop(toolId) {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            if (!dropZone) return;
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drop-zone-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drop-zone-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drop-zone-over');
+                const files = e.dataTransfer.files;
+                handleFiles(files, toolId);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files, toolId);
+            });
+        }
+
+        function handleFiles(files, toolId) {
+            const isMultiple = toolId === 'merge-pdf' || toolId === 'jpg-to-pdf';
+            if (!isMultiple && files.length > 1) {
+                showStatus('Please select only one file for this tool.', 'error');
+                return;
+            }
+            if (!isMultiple) {
+                selectedFiles = [files[0]];
+            } else {
+                selectedFiles.push(...Array.from(files));
+            }
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const fileListEl = document.getElementById('file-list');
+            fileListEl.innerHTML = selectedFiles.map((file, index) => `
+                <div class="bg-gray-100 p-3 rounded-lg flex justify-between items-center">
+                    <div class="flex items-center">
+                        <i data-lucide="file" class="w-5 h-5 text-gray-500 mr-2"></i>
+                        <span class="text-sm font-medium">${file.name}</span>
+                    </div>
+                    <button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">×</button>
+                </div>
+            `).join('');
+            if (selectedFiles.length > 0) {
+                 const dropZone = document.getElementById('drop-zone');
+                 if(dropZone) dropZone.style.display = 'none';
+            }
+        }
+        
+        window.removeFile = (index) => {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+            if (selectedFiles.length === 0) {
+                 const dropZone = document.getElementById('drop-zone');
+                 if(dropZone) dropZone.style.display = 'block';
+            }
+        };
+
+        // --- STATUS & PROCESSING ---
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            const colors = {
+                info: 'text-blue-600',
+                success: 'text-green-600',
+                error: 'text-red-600',
+                progress: 'text-gray-700'
+            };
+            statusEl.innerHTML = `<p class="${colors[type]}">${message}</p>`;
+        }
+        
+        function setProcessingState(isProcessing) {
+            const processBtn = document.getElementById('process-btn');
+            processBtn.disabled = isProcessing;
+            if (isProcessing) {
+                showStatus(`
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-dark"></div>
+                        <span class="ml-3">Processing... please wait.</span>
+                    </div>
+                `, 'progress');
+            } else {
+                showStatus('');
+            }
+        }
+        
+        async function processFiles(toolId) {
+            if (toolId !== 'text-to-pdf' && selectedFiles.length === 0) {
+                showStatus('Please select at least one file.', 'error');
+                return;
+            }
+            
+            setProcessingState(true);
+            try {
+                switch (toolId) {
+                    case 'merge-pdf':      await handleMergePDF(); break;
+                    case 'split-pdf':      await handleSplitPDF(); break;
+                    case 'compress-pdf':   await handleCompressPDF(); break;
+                    case 'text-to-pdf':    await handleTextToPDF(); break;
+                    case 'pdf-to-text':    await handlePDFToText(); break;
+                    case 'pdf-to-jpg':     await handlePDFToJPG(); break;
+                    case 'jpg-to-pdf':     await handleJPGToPDF(); break;
+                    case 'protect-pdf':    await handleProtectPDF(); break;
+                    case 'unlock-pdf':     await handleUnlockPDF(); break;
+                    case 'add-page-numbers': await handleAddPageNumbers(); break;
+                    default: throw new Error('Unknown tool.');
+                }
+                showStatus('Success! Your file is ready for download.', 'success');
+            } catch (error) {
+                console.error('Processing error:', error);
+                showStatus(`An error occurred: ${error.message}`, 'error');
+            } finally {
+                setProcessingState(false);
+            }
+        }
+
+        // --- PDF TOOL IMPLEMENTATIONS ---
+        
+        async function handleMergePDF() {
+            const mergedPdf = await PDFDocument.create();
+            for (const file of selectedFiles) {
+                const pdfBytes = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+                const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                copiedPages.forEach(page => mergedPdf.addPage(page));
+            }
+            const mergedPdfBytes = await mergedPdf.save();
+            saveAs(new Blob([mergedPdfBytes], { type: 'application/pdf' }), 'dearpdf-merged.pdf');
+        }
+
+        async function handleSplitPDF() {
+            showStatus('Splitting PDF... this may trigger multiple downloads.', 'info');
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+            
+            for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+                const newDoc = await PDFDocument.create();
+                const [copiedPage] = await newDoc.copyPages(pdfDoc, [i]);
+                newDoc.addPage(copiedPage);
+                const newPdfBytes = await newDoc.save();
+                saveAs(new Blob([newPdfBytes], { type: 'application/pdf' }), `${file.name.replace('.pdf', '')}-page-${i + 1}.pdf`);
+            }
+        }
+        
+        async function handleCompressPDF() {
+            const quality = parseFloat(document.getElementById('quality-select').value);
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+
+            const newPdfDoc = await PDFDocument.create();
+            const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+            
+            for(let i = 1; i <= pdf.numPages; i++) {
+                showStatus(`Processing page ${i} of ${pdf.numPages}...`, 'progress');
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 1.5 }); // Render at higher scale for quality
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                
+                const jpgImageDataUrl = canvas.toDataURL('image/jpeg', quality);
+                const jpgImageBytes = await fetch(jpgImageDataUrl).then(res => res.arrayBuffer());
+                
+                const jpgImage = await newPdfDoc.embedJpg(jpgImageBytes);
+                
+                const newPage = newPdfDoc.addPage([jpgImage.width, jpgImage.height]);
+                newPage.drawImage(jpgImage, {
+                    x: 0,
+                    y: 0,
+                    width: newPage.getWidth(),
+                    height: newPage.getHeight()
+                });
+            }
+            
+            const compressedPdfBytes = await newPdfDoc.save();
+            saveAs(new Blob([compressedPdfBytes], { type: 'application/pdf' }), `dearpdf-compressed.pdf`);
+        }
+
+        async function handleTextToPDF() {
+            const text = document.getElementById('text-input').value;
+            if (!text) throw new Error('Text input is empty.');
+
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const { width, height } = page.getSize();
+            
+            page.drawText(text, {
+                x: 50,
+                y: height - 50,
+                font,
+                size: 12,
+                lineHeight: 14,
+                maxWidth: width - 100,
+            });
+            
+            const pdfBytes = await pdfDoc.save();
+            saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), 'dearpdf-text.pdf');
+        }
+
+        async function handlePDFToText() {
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+            }
+            saveAs(new Blob([fullText], {type: "text/plain;charset=utf-8"}), 'dearpdf-extracted.txt');
+        }
+
+        async function handlePDFToJPG() {
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+             for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                canvas.toBlob(blob => {
+                    saveAs(blob, `${file.name.replace('.pdf', '')}-page-${i}.jpg`);
+                }, 'image/jpeg', 0.92);
+             }
+        }
+        
+        async function handleJPGToPDF() {
+            const pdfDoc = await PDFDocument.create();
+            for (const file of selectedFiles) {
+                const jpgBytes = await file.arrayBuffer();
+                const jpgImage = await pdfDoc.embedJpg(jpgBytes);
+                const page = pdfDoc.addPage([jpgImage.width, jpgImage.height]);
+                page.drawImage(jpgImage, {
+                    x: 0,
+                    y: 0,
+                    width: page.getWidth(),
+                    height: page.getHeight(),
+                });
+            }
+            const pdfBytes = await pdfDoc.save();
+            saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), 'dearpdf-from-images.pdf');
+        }
+
+        async function handleProtectPDF() {
+            const password = document.getElementById('password-input').value;
+            if (!password) throw new Error('Password is required.');
+            
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+            
+            const protectedBytes = await pdfDoc.save({
+                userPassword: password,
+                ownerPassword: password, // For simplicity
+                permissions: {},
+            });
+            saveAs(new Blob([protectedBytes], { type: 'application/pdf' }), `dearpdf-protected.pdf`);
+        }
+        
+        async function handleUnlockPDF() {
+            const password = document.getElementById('password-input').value;
+            if (!password) throw new Error('Password is required to unlock.');
+            
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            
+            try {
+                const pdfDoc = await PDFDocument.load(pdfBytes, { ownerPassword: password });
+                const unlockedBytes = await pdfDoc.save();
+                saveAs(new Blob([unlockedBytes], { type: 'application/pdf' }), `dearpdf-unlocked.pdf`);
+            } catch (e) {
+                throw new Error('Incorrect password or file is not encrypted.');
+            }
+        }
+
+        async function handleAddPageNumbers() {
+            const file = selectedFiles[0];
+            const pdfBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+            const pages = pdfDoc.getPages();
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                const { width, height } = page.getSize();
+                const pageNumberText = `${i + 1} / ${pages.length}`;
+                
+                page.drawText(pageNumberText, {
+                    x: width / 2 - 20,
+                    y: 20,
+                    size: 12,
+                    font,
+                    color: rgb(0.5, 0.5, 0.5),
+                });
+            }
+
+            const numberedPdfBytes = await pdfDoc.save();
+            saveAs(new Blob([numberedPdfBytes], { type: 'application/pdf' }), 'dearpdf-numbered.pdf');
+        }
+
+        // --- INITIALIZE THE APP ---
+        renderToolCards();
+
+    });
+    </script>
+</body>
+</html>
