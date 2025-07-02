@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DearPDF - Free Client-Side PDF Tools</title>
+    <meta name="description" content="A free, browser-based PDF tool suite. Merge, split, compress, convert, and edit your PDFs securely on your own device. No uploads, no servers.">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- JS Libraries via CDN -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Configure PDF.js worker -->
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    </script>
+    
+    <style>
+        /* Basic styles for dark mode and layout */
+        :root {
+            --bg-light: #f9fafb; /* gray-50 */
+            --bg-dark: #1f2937;  /* gray-800 */
+            --text-light: #111827; /* gray-900 */
+            --text-dark: #f9fafb;  /* gray-50 */
+            --border-light: #e5e7eb; /* gray-200 */
+            --border-dark: #4b5563;  /* gray-600 */
+            --surface-light: #ffffff;
+            --surface-dark: #374151; /* gray-700 */
+        }
+        .dark {
+            --bg-light: var(--bg-dark);
+            --text-light: var(--text-dark);
+            --border-light: var(--border-dark);
+            --surface-light: var(--surface-dark);
+        }
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tool-section { display: none; }
+        .tool-section.active { display: block; }
+        .sidebar-item.active { background-color: #3b82f6; color: white; }
+        .drag-over { border: 2px dashed #3b82f6; }
+        /* For better mobile experience */
+        @media (max-width: 768px) {
+            .sidebar {
+                flex-direction: row;
+                overflow-x: auto;
+                scrollbar-width: none; /* Firefox */
+            }
+            .sidebar::-webkit-scrollbar { display: none; } /* Chrome, Safari */
+            .sidebar-item { white-space: nowrap; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-white dark:bg-gray-900/50 p-4 border-b md:border-b-0 md:border-r border-[var(--border-light)] flex-shrink-0 sidebar">
+            <h1 class="text-2xl font-bold text-blue-600 mb-4 hidden md:block">DearPDF</h1>
+            <nav class="flex flex-col space-y-2">
+                <a href="#merge" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors active" data-tool="tool-merge">✅ Merge PDF</a>
+                <a href="#split" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-split">✂️ Split PDF</a>
+                <a href="#compress" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-compress">🗜️ Compress PDF</a>
+                <a href="#pdf-to-text" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-pdf-to-text">📄 PDF to Text</a>
+                <a href="#pdf-to-ppt" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-pdf-to-ppt">🎞️ PDF to PowerPoint</a>
+                <a href="#word-to-pdf" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-word-to-pdf">📄 Word to PDF</a>
+                <a href="#excel-to-pdf" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-excel-to-pdf">📊 Excel to PDF</a>
+                <a href="#pdf-to-jpg" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-pdf-to-jpg">🖼️ PDF to JPG</a>
+                <a href="#image-to-pdf" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-image-to-pdf">🖼️ Image to PDF</a>
+                <a href="#protect" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-protect">🔐 Protect PDF</a>
+                <a href="#unlock" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-unlock">🔓 Unlock PDF</a>
+                <a href="#watermark" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-watermark">💧 Add Watermark</a>
+                <a href="#rotate" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-rotate">🔁 Rotate PDF</a>
+                <a href="#page-numbers" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-page-numbers">🔢 Add Page Numbers</a>
+                <a href="#ocr" class="sidebar-item p-2 rounded-md hover:bg-blue-500 hover:text-white transition-colors" data-tool="tool-ocr">👓 OCR PDF</a>
+            </nav>
+            <div class="mt-auto pt-4">
+                <button id="darkModeToggle" class="w-full p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    Toggle Dark Mode
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8">
+            <div class="max-w-4xl mx-auto">
+                
+                <!-- Generic File Drop Area Template -->
+                <template id="fileDropTemplate">
+                    <div class="file-drop-area border-2 border-dashed border-[var(--border-light)] rounded-lg p-8 text-center cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <input type="file" class="hidden file-input" multiple>
+                        <h3 class="text-xl font-semibold">Drag & drop files here</h3>
+                        <p class="text-gray-500 dark:text-gray-400">or click to select files</p>
+                        <div class="file-list mt-4 text-left"></div>
+                    </div>
+                </template>
+
+                <!-- Tool Sections -->
+
+                <!-- 1. Merge PDF -->
+                <section id="tool-merge" class="tool-section active">
+                    <h2 class="text-3xl font-bold mb-2">Merge PDF Files</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Combine multiple PDFs into a single document. Drag files to reorder them.</p>
+                    <!-- File drop area will be injected here by JS -->
+                    <button id="mergeBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Merge PDFs</button>
+                </section>
+
+                <!-- 2. Split PDF -->
+                <section id="tool-split" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Split PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Extract a range of pages from a PDF file. Select one PDF to begin.</p>
+                    <!-- File drop area here -->
+                    <div class="mt-4">
+                        <label for="split-pages" class="block font-medium mb-1">Pages to extract:</label>
+                        <input type="text" id="split-pages" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" placeholder="e.g., 1-3, 5, 8-10">
+                    </div>
+                    <button id="splitBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Split PDF</button>
+                </section>
+
+                <!-- 3. Compress PDF -->
+                <section id="tool-compress" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Compress PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Reduce the file size of your PDF. Quality may be reduced.</p>
+                    <!-- File drop area here -->
+                     <div class="mt-4">
+                        <label for="compress-quality" class="block font-medium mb-1">Compression Quality:</label>
+                        <select id="compress-quality" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]">
+                            <option value="0.5">Low (Smallest Size)</option>
+                            <option value="0.75" selected>Medium</option>
+                            <option value="0.9">High (Best Quality)</option>
+                        </select>
+                    </div>
+                    <button id="compressBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Compress PDF</button>
+                </section>
+
+                <!-- 4. PDF to Text -->
+                <section id="tool-pdf-to-text" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">PDF to Text</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Extract all text content from a PDF file and download it as a .txt file.</p>
+                    <!-- File drop area here -->
+                    <button id="pdfToTextBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convert to Text</button>
+                </section>
+                
+                <!-- 5. PDF to PowerPoint -->
+                <section id="tool-pdf-to-ppt" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">PDF to PowerPoint (as Images)</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">This tool converts each page of your PDF into a JPG image. The images will be bundled in a ZIP file. You can then insert these images into your PowerPoint slides.</p>
+                    <!-- File drop area here -->
+                    <button id="pdfToPptBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convert to Images for PowerPoint</button>
+                </section>
+                
+                <!-- 6. Word to PDF -->
+                <section id="tool-word-to-pdf" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Word to PDF</h2>
+                    <div class="p-4 bg-yellow-100 dark:bg-yellow-900/50 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200">
+                        <h3 class="font-bold">Feature Not Available in Browser</h3>
+                        <p>Converting DOCX to PDF requires complex server-side processing which this client-side tool does not support. To convert a Word document to PDF, please use your word processing software (e.g., Microsoft Word, Google Docs, LibreOffice) and select "Save as PDF" or "Export as PDF".</p>
+                    </div>
+                </section>
+
+                <!-- 7. Excel to PDF -->
+                <section id="tool-excel-to-pdf" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Excel to PDF</h2>
+                    <div class="p-4 bg-yellow-100 dark:bg-yellow-900/50 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200">
+                        <h3 class="font-bold">Feature Not Available in Browser</h3>
+                        <p>Converting XLSX to PDF is not possible in the browser. To convert an Excel spreadsheet to PDF, please use your spreadsheet software (e.g., Microsoft Excel, Google Sheets, LibreOffice Calc) and use the "Save as PDF" or "Export as PDF" function.</p>
+                    </div>
+                </section>
+
+                <!-- 8. PDF to JPG -->
+                <section id="tool-pdf-to-jpg" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">PDF to JPG</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Convert each page of a PDF into a high-quality JPG image. Multi-page PDFs will be downloaded as a ZIP file.</p>
+                    <!-- File drop area here -->
+                    <button id="pdfToJpgBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convert to JPG</button>
+                </section>
+
+                <!-- 9. Image to PDF -->
+                <section id="tool-image-to-pdf" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Image to PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Convert JPG, PNG, or other image files into a single PDF document. Each image will be placed on a separate page.</p>
+                    <!-- File drop area here -->
+                    <button id="imageToPdfBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convert to PDF</button>
+                </section>
+
+                <!-- 10. Protect PDF -->
+                <section id="tool-protect" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Protect PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Add a password to your PDF file to prevent unauthorized access.</p>
+                    <!-- File drop area here -->
+                     <div class="mt-4">
+                        <label for="protect-password" class="block font-medium mb-1">Set Password:</label>
+                        <input type="password" id="protect-password" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" placeholder="Enter a strong password">
+                    </div>
+                    <button id="protectBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Protect PDF</button>
+                </section>
+
+                <!-- 11. Unlock PDF -->
+                <section id="tool-unlock" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Unlock PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Remove a password from a PDF file. You must know the current password to unlock it.</p>
+                    <!-- File drop area here -->
+                     <div class="mt-4">
+                        <label for="unlock-password" class="block font-medium mb-1">Current Password:</label>
+                        <input type="password" id="unlock-password" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" placeholder="Enter the current PDF password">
+                    </div>
+                    <button id="unlockBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Unlock PDF</button>
+                </section>
+
+                <!-- 12. Add Watermark -->
+                <section id="tool-watermark" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Add Watermark</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Stamp text over your PDF pages as a watermark.</p>
+                    <!-- File drop area here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                           <label for="watermark-text" class="block font-medium mb-1">Watermark Text:</label>
+                           <input type="text" id="watermark-text" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" value="CONFIDENTIAL">
+                        </div>
+                        <div>
+                           <label for="watermark-size" class="block font-medium mb-1">Font Size:</label>
+                           <input type="number" id="watermark-size" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" value="50">
+                        </div>
+                         <div>
+                           <label for="watermark-opacity" class="block font-medium mb-1">Opacity (0.0 - 1.0):</label>
+                           <input type="number" id="watermark-opacity" step="0.1" min="0" max="1" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" value="0.5">
+                        </div>
+                        <div>
+                           <label for="watermark-color" class="block font-medium mb-1">Color:</label>
+                           <input type="color" id="watermark-color" class="w-full p-1 h-10 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" value="#ff0000">
+                        </div>
+                    </div>
+                    <button id="watermarkBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Add Watermark</button>
+                </section>
+
+                <!-- 13. Rotate PDF -->
+                <section id="tool-rotate" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Rotate PDF</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Rotate all pages of a PDF file.</p>
+                    <!-- File drop area here -->
+                    <div class="mt-4">
+                        <label for="rotate-angle" class="block font-medium mb-1">Rotation Angle:</label>
+                        <select id="rotate-angle" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]">
+                            <option value="90">90° Clockwise</option>
+                            <option value="180">180°</option>
+                            <option value="270">270° Clockwise (90° Counter-clockwise)</option>
+                        </select>
+                    </div>
+                    <button id="rotateBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Rotate PDF</button>
+                </section>
+
+                <!-- 14. Add Page Numbers -->
+                <section id="tool-page-numbers" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">Add Page Numbers</h2>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">Insert page numbers into your PDF document.</p>
+                    <!-- File drop area here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label for="pagenum-position" class="block font-medium mb-1">Position:</label>
+                            <select id="pagenum-position" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]">
+                                <option value="bottom-center">Bottom Center</option>
+                                <option value="bottom-right" selected>Bottom Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                                <option value="top-center">Top Center</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="top-left">Top Left</option>
+                            </select>
+                        </div>
+                        <div>
+                           <label for="pagenum-size" class="block font-medium mb-1">Font Size:</label>
+                           <input type="number" id="pagenum-size" class="w-full p-2 border rounded bg-[var(--surface-light)] border-[var(--border-light)]" value="12">
+                        </div>
+                    </div>
+                    <button id="pageNumbersBtn" class="mt-4 w-full md:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Add Page Numbers</button>
+                </section>
+                
+                <!-- 15. OCR PDF -->
+                <section id="tool-ocr" class="tool-section">
+                    <h2 class="text-3xl font-bold mb-2">OCR PDF</h2>
+                     <div class="p-4 bg-yellow-100 dark:bg-yellow-900/50 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200">
+                        <h3 class="font-bold">Feature Not Available (Dummy)</h3>
+                        <p>Performing Optical Character Recognition (OCR) is a very resource-intensive task. While possible in the browser with libraries like Tesseract.js, it can be slow and consume significant memory. For the best results, we recommend using dedicated desktop or server-based OCR software.</p>
+                    </div>
+                </section>
+                
+                <!-- Status/Error Area -->
+                <div id="status" class="mt-6 p-4 rounded-md hidden"></div>
+
+            </div>
+        </main>
+    </div>
+
+    <footer class="text-center p-4 text-sm text-gray-500 dark:text-gray-400 border-t border-[var(--border-light)]">
+        © 2024 DearPDF. All rights reserved.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            'use strict';
+            
+            // --- Library Globals ---
+            const { PDFDocument, rgb, degrees, StandardFonts } = PDFLib;
+            const { pdfjsLib } = window;
+            const { JSZip } = window;
+            
+            // --- UI Elements ---
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            const toolSections = document.querySelectorAll('.tool-section');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const statusDiv = document.getElementById('status');
+            
+            // --- App State ---
+            let currentTool = 'tool-merge';
+            const selectedFiles = new Map(); // Maps toolId to a FileList
+            
+            // --- Helper Functions ---
+            const showStatus = (message, type = 'info') => {
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = message;
+                statusDiv.className = 'mt-6 p-4 rounded-md';
+                if (type === 'error') {
+                    statusDiv.classList.add('bg-red-100', 'dark:bg-red-900/50', 'text-red-800', 'dark:text-red-200');
+                } else if (type === 'success') {
+                    statusDiv.classList.add('bg-green-100', 'dark:bg-green-900/50', 'text-green-800', 'dark:text-green-200');
+                } else {
+                    statusDiv.classList.add('bg-blue-100', 'dark:bg-blue-900/50', 'text-blue-800', 'dark:text-blue-200');
+                }
+            };
+            
+            const hideStatus = () => {
+                statusDiv.style.display = 'none';
+            };
+
+            const getToolFromId = (toolId) => document.getElementById(toolId);
+            
+            const getProcessButton = (toolId) => getToolFromId(toolId).querySelector('button[id$="Btn"]');
+            
+            const getFileInput = (toolId) => getToolFromId(toolId).querySelector('.file-input');
+
+            // --- Dark Mode ---
+            const applyDarkMode = (isDark) => {
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            };
+
+            darkModeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('darkMode', isDark);
+            });
+            
+            // --- Tool Switching Logic ---
+            const showTool = (toolId) => {
+                hideStatus();
+                currentTool = toolId;
+                toolSections.forEach(section => {
+                    section.classList.toggle('active', section.id === toolId);
+                });
+                sidebarItems.forEach(item => {
+                    item.classList.toggle('active', item.dataset.tool === toolId);
+                });
+                updateProcessButtonState(toolId);
+            };
+
+            sidebarItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showTool(e.target.dataset.tool);
+                });
+            });
+
+            // --- File Handling & Drag-Drop Logic ---
+            const updateProcessButtonState = (toolId) => {
+                const btn = getProcessButton(toolId);
+                if (btn) {
+                    const files = selectedFiles.get(toolId);
+                    btn.disabled = !files || files.length === 0;
+                }
+            };
+
+            const handleFileSelect = (toolId, files) => {
+                selectedFiles.set(toolId, files);
+                const fileListDiv = getToolFromId(toolId).querySelector('.file-list');
+                fileListDiv.innerHTML = '';
+                if(files.length > 0) {
+                    const list = document.createElement('ul');
+                    list.className = 'list-disc pl-5';
+                    Array.from(files).forEach(file => {
+                        const li = document.createElement('li');
+                        li.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                        list.appendChild(li);
+                    });
+                    fileListDiv.appendChild(list);
+                }
+                updateProcessButtonState(toolId);
+                hideStatus();
+            };
+            
+            const setupFileDropArea = (toolId) => {
+                const toolSection = getToolFromId(toolId);
+                if(toolSection.querySelector('.file-drop-area')) return; // Already setup
+
+                const template = document.getElementById('fileDropTemplate');
+                const clone = template.content.cloneNode(true);
+                const dropArea = clone.querySelector('.file-drop-area');
+                const fileInput = clone.querySelector('.file-input');
+                
+                // Insert the drop area before the button
+                const button = toolSection.querySelector('button');
+                toolSection.insertBefore(clone, button);
+
+                dropArea.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', () => handleFileSelect(toolId, fileInput.files));
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, false);
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
+                });
+
+                dropArea.addEventListener('drop', e => handleFileSelect(toolId, e.dataTransfer.files), false);
+            };
+
+            // --- PDF Processing Logic ---
+            const readFileAsArrayBuffer = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                });
+            };
+
+            // Tool 1: Merge PDF
+            document.getElementById('mergeBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-merge');
+                if (!files || files.length < 2) {
+                    showStatus('Please select at least two PDF files to merge.', 'error');
+                    return;
+                }
+                showStatus('Merging PDFs...');
+                try {
+                    const mergedPdf = await PDFDocument.create();
+                    for (const file of files) {
+                        const pdfBytes = await readFileAsArrayBuffer(file);
+                        const pdf = await PDFDocument.load(pdfBytes);
+                        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                        copiedPages.forEach(page => mergedPdf.addPage(page));
+                    }
+                    const mergedPdfBytes = await mergedPdf.save();
+                    download(mergedPdfBytes, "dearpdf_merged.pdf", "application/pdf");
+                    showStatus('Merge successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 2: Split PDF
+            document.getElementById('splitBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-split');
+                const pageRanges = document.getElementById('split-pages').value;
+                if (!files || files.length !== 1) {
+                    showStatus('Please select exactly one PDF file.', 'error'); return;
+                }
+                if (!pageRanges) {
+                    showStatus('Please enter the pages to extract.', 'error'); return;
+                }
+                showStatus('Splitting PDF...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdf = await PDFDocument.load(pdfBytes);
+                    const newPdf = await PDFDocument.create();
+                    
+                    const pageIndices = pageRanges.split(',').flatMap(range => {
+                        if (range.includes('-')) {
+                            const [start, end] = range.split('-').map(Number);
+                            return Array.from({length: end - start + 1}, (_, i) => start + i - 1);
+                        }
+                        return Number(range) - 1;
+                    }).filter(index => index >= 0 && index < pdf.getPageCount());
+
+                    const copiedPages = await newPdf.copyPages(pdf, pageIndices);
+                    copiedPages.forEach(page => newPdf.addPage(page));
+
+                    const newPdfBytes = await newPdf.save();
+                    download(newPdfBytes, "dearpdf_split.pdf", "application/pdf");
+                    showStatus('Split successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+            
+            // Tool 3: Compress PDF
+            document.getElementById('compressBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-compress');
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                const quality = parseFloat(document.getElementById('compress-quality').value);
+                showStatus('Compressing PDF... This may take a moment.');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+                    const newPdf = await PDFDocument.create();
+
+                    for (let i = 1; i <= pdfDoc.numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const viewport = page.getViewport({ scale: 1.5 }); // Higher scale for better quality
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        
+                        const jpgDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        const jpgImageBytes = await fetch(jpgDataUrl).then(res => res.arrayBuffer());
+                        
+                        const jpgImage = await newPdf.embedJpg(jpgImageBytes);
+                        
+                        const newPage = newPdf.addPage([page.view[2], page.view[3]]); // Use original page dimensions
+                        newPage.drawImage(jpgImage, {
+                            x: 0,
+                            y: 0,
+                            width: newPage.getWidth(),
+                            height: newPage.getHeight(),
+                        });
+                    }
+
+                    const newPdfBytes = await newPdf.save();
+                    download(newPdfBytes, "dearpdf_compressed.pdf", "application/pdf");
+                    showStatus('Compression successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 4: PDF to Text
+            document.getElementById('pdfToTextBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-pdf-to-text');
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                showStatus('Extracting text...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+                    let textContent = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const text = await page.getTextContent();
+                        textContent += text.items.map(item => item.str).join(' ') + '\n\n';
+                    }
+                    download(new Blob([textContent], { type: 'text/plain' }), 'dearpdf_extracted.txt');
+                    showStatus('Text extraction successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+            
+            // Re-usable PDF to Images function
+            const convertPdfToImages = async (files, format = 'jpeg') => {
+                 if (!files || files.length !== 1) {
+                    showStatus(`Please select one PDF file.`, 'error'); return null;
+                }
+                showStatus(`Converting PDF to ${format.toUpperCase()}...`);
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+                    const images = [];
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        showStatus(`Processing page ${i} of ${pdf.numPages}...`);
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.0 }); // High resolution
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        images.push(canvas.toDataURL(`image/${format}`));
+                    }
+                    return images;
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                    return null;
+                }
+            };
+            
+            // Tool 5 (PDF to PPT) & 8 (PDF to JPG) use the same core logic
+            const setupPdfToImageTool = (btnId, toolId) => {
+                document.getElementById(btnId).addEventListener('click', async () => {
+                    const files = selectedFiles.get(toolId);
+                    const images = await convertPdfToImages(files, 'jpeg');
+                    if (images) {
+                        if (images.length === 1) {
+                            download(images[0], 'dearpdf_page_1.jpg');
+                        } else {
+                            const zip = new JSZip();
+                            images.forEach((imgDataUrl, i) => {
+                                zip.file(`page_${i + 1}.jpg`, imgDataUrl.split(',')[1], { base64: true });
+                            });
+                            const zipBlob = await zip.generateAsync({ type: 'blob' });
+                            download(zipBlob, 'dearpdf_images.zip');
+                        }
+                        showStatus('Conversion successful!', 'success');
+                    }
+                });
+            };
+            setupPdfToImageTool('pdfToPptBtn', 'tool-pdf-to-ppt');
+            setupPdfToImageTool('pdfToJpgBtn', 'tool-pdf-to-jpg');
+            
+            // Tool 9: Image to PDF
+            document.getElementById('imageToPdfBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-image-to-pdf');
+                if (!files || files.length === 0) {
+                    showStatus('Please select one or more image files.', 'error'); return;
+                }
+                showStatus('Converting images to PDF...');
+                try {
+                    const newPdf = await PDFDocument.create();
+                    for (const file of files) {
+                        const imgBytes = await readFileAsArrayBuffer(file);
+                        let image;
+                        if (file.type === 'image/jpeg') {
+                            image = await newPdf.embedJpg(imgBytes);
+                        } else if (file.type === 'image/png') {
+                            image = await newPdf.embedPng(imgBytes);
+                        } else {
+                            showStatus(`Unsupported image type: ${file.type}. Please use JPG or PNG.`, 'error');
+                            continue;
+                        }
+                        const page = newPdf.addPage([image.width, image.height]);
+                        page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+                    }
+                    const newPdfBytes = await newPdf.save();
+                    download(newPdfBytes, "dearpdf_from_images.pdf", "application/pdf");
+                    showStatus('Image to PDF conversion successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 10: Protect PDF
+            document.getElementById('protectBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-protect');
+                const password = document.getElementById('protect-password').value;
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                if (!password) { showStatus('Please enter a password.', 'error'); return; }
+                showStatus('Adding password...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await PDFDocument.load(pdfBytes);
+                    const protectedPdfBytes = await pdfDoc.save({
+                        useObjectStreams: false, // Required for encryption
+                        encryption: {
+                            userPassword: password,
+                            ownerPassword: password,
+                            permissions: {
+                                printing: 'highResolution',
+                                copying: false,
+                            },
+                        },
+                    });
+                    download(protectedPdfBytes, 'dearpdf_protected.pdf', 'application/pdf');
+                    showStatus('PDF protected successfully!', 'success');
+                } catch(e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 11: Unlock PDF
+            document.getElementById('unlockBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-unlock');
+                const password = document.getElementById('unlock-password').value;
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                if (!password) { showStatus('Please enter the current password.', 'error'); return; }
+                showStatus('Attempting to unlock PDF...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await PDFDocument.load(pdfBytes, { ownerPassword: password });
+                    const unlockedPdfBytes = await pdfDoc.save();
+                    download(unlockedPdfBytes, 'dearpdf_unlocked.pdf', 'application/pdf');
+                    showStatus('PDF unlocked successfully!', 'success');
+                } catch(e) {
+                    showStatus(`Error: Incorrect password or PDF is not encrypted. (${e.message})`, 'error');
+                }
+            });
+
+            // Tool 12: Add Watermark
+            document.getElementById('watermarkBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-watermark');
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                const text = document.getElementById('watermark-text').value;
+                const size = parseInt(document.getElementById('watermark-size').value);
+                const opacity = parseFloat(document.getElementById('watermark-opacity').value);
+                const colorHex = document.getElementById('watermark-color').value;
+                const color = rgb(parseInt(colorHex.slice(1, 3), 16) / 255, parseInt(colorHex.slice(3, 5), 16) / 255, parseInt(colorHex.slice(5, 7), 16) / 255);
+                
+                showStatus('Adding watermark...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await PDFDocument.load(pdfBytes);
+                    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                    const pages = pdfDoc.getPages();
+                    
+                    for (const page of pages) {
+                        const { width, height } = page.getSize();
+                        page.drawText(text, {
+                            x: width / 2 - (text.length * size * 0.3), // Approximate center
+                            y: height / 2,
+                            font: helveticaFont,
+                            size,
+                            color,
+                            opacity,
+                            rotate: degrees(45),
+                        });
+                    }
+
+                    const newPdfBytes = await pdfDoc.save();
+                    download(newPdfBytes, 'dearpdf_watermarked.pdf', 'application/pdf');
+                    showStatus('Watermark added successfully!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 13: Rotate PDF
+            document.getElementById('rotateBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-rotate');
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                const angle = parseInt(document.getElementById('rotate-angle').value);
+                
+                showStatus('Rotating PDF...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await PDFDocument.load(pdfBytes);
+                    const pages = pdfDoc.getPages();
+                    pages.forEach(page => {
+                        const currentRotation = page.getRotation().angle;
+                        page.setRotation(degrees(currentRotation + angle));
+                    });
+
+                    const newPdfBytes = await pdfDoc.save();
+                    download(newPdfBytes, 'dearpdf_rotated.pdf', 'application/pdf');
+                    showStatus('Rotation successful!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // Tool 14: Add Page Numbers
+            document.getElementById('pageNumbersBtn').addEventListener('click', async () => {
+                const files = selectedFiles.get('tool-page-numbers');
+                if (!files || files.length !== 1) { showStatus('Please select one PDF file.', 'error'); return; }
+                
+                showStatus('Adding page numbers...');
+                try {
+                    const pdfBytes = await readFileAsArrayBuffer(files[0]);
+                    const pdfDoc = await PDFDocument.load(pdfBytes);
+                    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                    const pages = pdfDoc.getPages();
+                    const totalPages = pages.length;
+
+                    const position = document.getElementById('pagenum-position').value;
+                    const size = parseInt(document.getElementById('pagenum-size').value);
+                    const margin = 20;
+
+                    for (let i = 0; i < totalPages; i++) {
+                        const page = pages[i];
+                        const { width, height } = page.getSize();
+                        const text = `${i + 1} / ${totalPages}`;
+                        const textWidth = helveticaFont.widthOfTextAtSize(text, size);
+                        
+                        let x, y;
+                        if(position.includes('bottom')) y = margin;
+                        if(position.includes('top')) y = height - size - margin;
+                        if(position.includes('left')) x = margin;
+                        if(position.includes('right')) x = width - textWidth - margin;
+                        if(position.includes('center')) x = width / 2 - textWidth / 2;
+
+                        page.drawText(text, { x, y, font: helveticaFont, size, color: rgb(0, 0, 0) });
+                    }
+
+                    const newPdfBytes = await pdfDoc.save();
+                    download(newPdfBytes, 'dearpdf_numbered.pdf', 'application/pdf');
+                    showStatus('Page numbers added successfully!', 'success');
+                } catch (e) {
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            });
+
+            // --- Initialization ---
+            const init = () => {
+                // Check for saved dark mode preference
+                if (localStorage.getItem('darkMode') === 'true' || 
+                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && localStorage.getItem('darkMode') === null)) {
+                    applyDarkMode(true);
+                }
+                
+                // Set up file drop areas for all tools that need them
+                toolSections.forEach(section => {
+                    // Exclude tools that don't need a file input
+                    if (!['tool-word-to-pdf', 'tool-excel-to-pdf', 'tool-ocr'].includes(section.id)) {
+                        setupFileDropArea(section.id);
+                        // Initialize empty file list for each tool
+                        selectedFiles.set(section.id, new DataTransfer().files);
+                    }
+                });
+
+                // Set initial active tool
+                showTool('tool-merge');
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
